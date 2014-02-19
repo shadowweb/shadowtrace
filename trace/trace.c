@@ -9,26 +9,25 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <pthread.h>
 #include <errno.h>
 #include <string.h>
 
+static pthread_t mainThreadId = 0;
 static size_t fileSizeIncrement = 4096;
 static off_t currentFileOffset = 0;
 static char *memoryPtr = NULL;
 static char *memoryCurrentPtr = NULL;
 static char *memoryEndPtr = NULL;
-static pthread_t mainThreadId = 0;
-static bool traceEnabled = false;
 static int fd = -1;
-static uint32_t addressCount = 0;
+static bool traceEnabled = false;
 
 void __attribute__ ((no_instrument_function)) traceFileUnmap()
 {
     // fprintf(stderr, "%s: enter, addressCount = %u\n", __func__, addressCount);
-    addressCount = 0;
     if ((fd > -1) && memoryPtr)
     {
         msync (memoryPtr, fileSizeIncrement, MS_SYNC);
@@ -80,7 +79,6 @@ void __attribute__ ((constructor,no_instrument_function)) traceBegin (void)
         if (fd >= 0)
             traceFileMap();
     }
-    /* Tracing requested: a trace file was found */
     fprintf(stderr, "%s: exit\n", __func__);
 }
 
@@ -105,7 +103,8 @@ void __attribute__ ((no_instrument_function)) __cyg_profile_func_enter (void *fu
     // when reached the end, sync, unmap, truncate file to the new size, and map to the new region in the file
     if (traceEnabled && (pthread_self() == mainThreadId) && memoryPtr)
     {
-        addressCount++;
+        if (!func)
+            fprintf (stderr, "Enter with NULL function pointer\n");
         unsigned long pointer = (unsigned long)(func);
         *(unsigned long *)memoryCurrentPtr = pointer;
         memoryCurrentPtr += sizeof(pointer);
@@ -123,7 +122,8 @@ void __attribute__ ((no_instrument_function)) __cyg_profile_func_exit (void *fun
     // when reached the end, sync, unmap, truncate file to the new size, and map to the new region in the file
     if (traceEnabled && (pthread_self() == mainThreadId) && memoryPtr)
     {
-        addressCount++;
+        if (!func)
+            fprintf (stderr, "Exit with NULL function pointer\n");
         unsigned long pointer = (unsigned long)(func);
         pointer |= 0x8000000000000000UL;
         *(unsigned long *)memoryCurrentPtr = pointer;
