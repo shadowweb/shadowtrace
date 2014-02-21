@@ -66,7 +66,7 @@ void __attribute__ ((no_instrument_function)) traceFileMap()
 
 void __attribute__ ((constructor,no_instrument_function)) traceBegin (void)
 {
-    fprintf(stderr, "%s: enter\n", __func__);
+    // fprintf(stderr, "%s: enter\n", __func__);
     // create binary file and map it to memory
     // save main thread id
     mainThreadId = pthread_self();
@@ -79,12 +79,12 @@ void __attribute__ ((constructor,no_instrument_function)) traceBegin (void)
         if (fd >= 0)
             traceFileMap();
     }
-    fprintf(stderr, "%s: exit\n", __func__);
+    // fprintf(stderr, "%s: exit\n", __func__);
 }
 
 void __attribute__ ((destructor,no_instrument_function)) traceEnd (void)
 {
-    fprintf(stderr, "%s: enter\n", __func__);
+    // fprintf(stderr, "%s: enter\n", __func__);
     // do msync and unmap and close file, truncate file to the correct file size
     if (fd > -1)
     {
@@ -94,7 +94,7 @@ void __attribute__ ((destructor,no_instrument_function)) traceEnd (void)
             fprintf (stderr, "failed to trancate trace file to the right size\n");
         close(fd);
     }
-    fprintf(stderr, "%s: exit\n", __func__);
+    // fprintf(stderr, "%s: exit\n", __func__);
 }
 
 void __attribute__ ((no_instrument_function)) __cyg_profile_func_enter (void *func, void *caller)
