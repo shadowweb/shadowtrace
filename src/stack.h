@@ -1,6 +1,9 @@
 #ifndef _STACK_
 #define _STACK_
 
+#include <stdint.h>
+#include <stdbool.h>
+
 typedef struct swStack
 {
     void **elements;

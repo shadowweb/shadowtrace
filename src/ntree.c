@@ -82,3 +82,25 @@ int swNTreeCompare(swNTree *node1, swNTree *node2)
         rtn = (node1 > node2) - (node1 < node2);
     return rtn;
 }
+
+static void swNTreePrintNode(swNTree *node, swNTreeWriteCB *writeCB, void *data, uint32_t level)
+{
+    writeCB(node->funcAddress, level, data);
+    for (uint32_t i = 0; i < node->count; i++)
+        swNTreePrintNode(&(node->children[i]), writeCB, data, level + 1);
+}
+
+void swNTreePrint(swNTree *root, swNTreeWriteCB *writeCB, void *data)
+{
+    if (root && writeCB)
+    {
+        uint32_t level = 0;
+        if (!(root->funcAddress & NTREE_ROOT_FLAG))
+        {
+            writeCB(root->funcAddress, level, data);
+            level++;
+        }
+        for (uint32_t i = 0; i < root->count; i++)
+            swNTreePrintNode(&(root->children[i]), writeCB, data, level);
+    }
+}

@@ -1,3 +1,6 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -75,7 +78,7 @@ bool functionTreeAppend(uint64_t functionAddress, bool end)
             {
                 if (currentParent->count > 1)
                 {
-                    if (swNTreeCompare(currentParent->children[currentParent->count - 1], lastChild) == 0)
+                    if (swNTreeCompare(&(currentParent->children[currentParent->count - 1]), lastChild) == 0)
                     {
                         currentParent->count--;
                         swNTreeDelete(lastChild);
@@ -100,6 +103,14 @@ bool functionTreeAppend(uint64_t functionAddress, bool end)
     return rtn;
 }
 
+void printFuncAddress(uint64_t funcAddress, uint32_t level, void *data)
+{
+    FILE *out = (FILE *)data;
+    // for (uint32_t l = 0; l < level; l++)
+    //     fprintf(out, "  ");
+    fprintf(out, "%*lx\n", level * 2, funcAddress);
+}
+
 int main(int argc, char *argv[])
 {
     int exitCode = EXIT_FAILURE;
@@ -121,7 +132,7 @@ int main(int argc, char *argv[])
     {
         if (initDataStructures())
         {
-            while (mapOffset < fileSize)
+            while (mapOffset < (off_t)fileSize)
             {
                 mapSize = ((fileSize >= (mapOffset + mapSize))? mapSize : (fileSize - mapOffset));
                 char *funcAddressesStart = (char *)mmap(NULL, mapSize, (PROT_READ), (MAP_PRIVATE | MAP_POPULATE), fd, mapOffset);
@@ -133,7 +144,7 @@ int main(int argc, char *argv[])
                     {
                         uint64_t addr = (*funcAddressesCurrent) & (~FUNCTION_END);
                         bool end = ((*funcAddressesCurrent & FUNCTION_END) != 0 );
-                        if (functionTreeAppend(*funcAddressesCurrent, end))
+                        if (functionTreeAppend(addr, end))
                             funcAddressesCurrent++;
                         else
                             break;
@@ -146,9 +157,15 @@ int main(int argc, char *argv[])
                 else
                     break;
             }
-            if (mapOffset == fileSize)
+            if (mapOffset == (off_t)fileSize)
             {
                 // TODO: print the tree to output file here
+                FILE *outStream = fopen(outFile, "w");
+                if (outStream)
+                {
+                    swNTreePrint(functionTree, printFuncAddress, outStream);
+                    fclose(outStream);
+                }
                 exitCode = EXIT_SUCCESS;
             }
             clearDataStructures();
