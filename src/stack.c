@@ -62,7 +62,7 @@ void *swStackPop(swStack *stack)
     void *rtn = NULL;
     if (stack && stack->count)
     {
-        rtn = stack->elements[stack->count];
+        rtn = stack->elements[(stack->count - 1)];
         stack->count--;
     }
     return rtn;
@@ -71,6 +71,6 @@ void *swStackPop(swStack *stack)
 void *swStackPeek(swStack *stack)
 {
     if (stack)
-        return stack->elements[stack->count];
+        return stack->elements[(stack->count - 1)];
     return NULL;
 }

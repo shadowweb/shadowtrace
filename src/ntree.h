@@ -15,7 +15,7 @@ typedef struct swNTree
     uint32_t repeatCount;
 } swNTree;
 
-typedef void swNTreeWriteCB(uint64_t funcAddress, uint32_t level, void *data);
+typedef void swNTreeWriteCB(uint64_t funcAddress, uint32_t repeatCount, uint32_t level, void *data);
 
 swNTree *swNTreeNew(uint64_t funcAddress);
 void swNTreeDelete(swNTree *tree);

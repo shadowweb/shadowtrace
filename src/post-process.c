@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <string.h>
+#include <errno.h>
 
 #include "ntree.h"
 #include "stack.h"
@@ -67,20 +69,25 @@ void clearDataStructures()
 
 bool functionTreeAppend(uint64_t functionAddress, bool end)
 {
+    printf ("'%s': entered\n", __func__);
     bool rtn = false;
     if (functionAddress)
     {
         if (end)
         {
+            printf ("'%s': remove case\n", __func__);
             swNTree *lastChild = swStackPop(callStack);
             swNTree *currentParent = swStackPeek(callStack);
             if (lastChild && currentParent)
             {
                 if (currentParent->count > 1)
                 {
-                    if (swNTreeCompare(&(currentParent->children[currentParent->count - 1]), lastChild) == 0)
+                    printf ("'%s': count = %u, prev child = %p, last child = %p, real last child = %p\n",
+                            __func__, currentParent->count, &(currentParent->children[currentParent->count - 2]), &(currentParent->children[currentParent->count - 1]), lastChild);
+                    if (swNTreeCompare(&(currentParent->children[currentParent->count - 2]), lastChild) == 0)
                     {
                         currentParent->count--;
+                        currentParent->children[currentParent->count - 1].repeatCount++;
                         swNTreeDelete(lastChild);
                     }
                     rtn = true;
@@ -88,27 +95,38 @@ bool functionTreeAppend(uint64_t functionAddress, bool end)
                 else
                     rtn = true;
             }
+            else
+                fprintf(stderr, "lastChild = %p, currentParent = %p\n", (void *)lastChild, (void *)currentParent);
         }
         else
         {
+            printf ("'%s': insert case\n", __func__);
             swNTree *currentParent = swStackPeek(callStack);
             if (currentParent)
             {
                 swNTree *nextChild = swNTreeAddNext(currentParent, functionAddress);
                 if (nextChild)
+                {
                     rtn = swStackPush(callStack, nextChild);
+                    if (!rtn)
+                        fprintf (stderr, "Failed to push next child to stack\n");
+                }
+                else
+                    fprintf (stderr, "Failed to add next child to currentParent\n");
             }
+            else
+                fprintf (stderr, "No parent on the stack\n");
         }
     }
     return rtn;
 }
 
-void printFuncAddress(uint64_t funcAddress, uint32_t level, void *data)
+void printFuncAddress(uint64_t funcAddress, uint32_t repeatCount, uint32_t level, void *data)
 {
     FILE *out = (FILE *)data;
     // for (uint32_t l = 0; l < level; l++)
     //     fprintf(out, "  ");
-    fprintf(out, "%*lx\n", level * 2, funcAddress);
+    fprintf(out, "%*s%#016lx (%u)\n", level * 2, ((level)? "\\-" : ""), funcAddress, repeatCount);
 }
 
 int main(int argc, char *argv[])
@@ -144,6 +162,8 @@ int main(int argc, char *argv[])
                     {
                         uint64_t addr = (*funcAddressesCurrent) & (~FUNCTION_END);
                         bool end = ((*funcAddressesCurrent & FUNCTION_END) != 0 );
+                        // printf ("funcAddressesStart = %p, funcAddressesEnd = %p, funcAddressesCurrent = %p, addr = %lx, end = %u\n",
+                        //         (void *)funcAddressesStart, (void *)funcAddressesEnd, (void *)funcAddressesCurrent, addr, end);
                         if (functionTreeAppend(addr, end))
                             funcAddressesCurrent++;
                         else
@@ -155,7 +175,10 @@ int main(int argc, char *argv[])
                     mapOffset += mapSize;
                 }
                 else
+                {
+                    fprintf(stderr, "mmap failed to create memory map of size %zu with offset %ld, \'%s\'", mapSize, mapOffset, strerror(errno));
                     break;
+                }
             }
             if (mapOffset == (off_t)fileSize)
             {
@@ -170,7 +193,11 @@ int main(int argc, char *argv[])
             }
             clearDataStructures();
         }
+        else
+            fprintf(stderr, "Failed to initialize data structures\n");
         close (fd);
     }
+    else
+        fprintf(stderr, "Failed to open input file\n");
     exit(exitCode);
 }

@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "ntree.h"
 
@@ -28,6 +30,8 @@ void swNTreeDelete(swNTree *tree)
         }
         if (tree->funcAddress & NTREE_ROOT_FLAG)
             free(tree);
+        else
+            memset(tree, 0, sizeof(swNTree));
     }
 }
 
@@ -42,9 +46,18 @@ swNTree *swNTreeAddNext(swNTree *parent, uint64_t funcAddress)
         else
         {
             uint32_t newSize = (parent->size)? (parent->size * 2) : 1;
-            swNTree *newChildren = realloc(parent->children, newSize);
+            printf ("newSize = %u, parent->children = %p\n", newSize, parent->children);
+            // TODO: figure out why realloc with memset does not work
+            // swNTree *newChildren = realloc(parent->children, (size_t)newSize * sizeof(swNTree));
+            swNTree *newChildren = calloc((size_t)newSize, sizeof(swNTree));
             if (newChildren)
             {
+                if (parent->size)
+                {
+                    memcpy(newChildren, parent->children, parent->count * sizeof(swNTree));
+                    free(parent->children);
+                }
+                // memset (&newChildren[parent->count], 0, (parent->size - parent->count) * sizeof(swNTree));
                 parent->children = newChildren;
                 parent->size = newSize;
                 canAdd = true;
@@ -85,7 +98,7 @@ int swNTreeCompare(swNTree *node1, swNTree *node2)
 
 static void swNTreePrintNode(swNTree *node, swNTreeWriteCB *writeCB, void *data, uint32_t level)
 {
-    writeCB(node->funcAddress, level, data);
+    writeCB(node->funcAddress, node->repeatCount, level, data);
     for (uint32_t i = 0; i < node->count; i++)
         swNTreePrintNode(&(node->children[i]), writeCB, data, level + 1);
 }
@@ -97,7 +110,7 @@ void swNTreePrint(swNTree *root, swNTreeWriteCB *writeCB, void *data)
         uint32_t level = 0;
         if (!(root->funcAddress & NTREE_ROOT_FLAG))
         {
-            writeCB(root->funcAddress, level, data);
+            writeCB(root->funcAddress, root->repeatCount, level, data);
             level++;
         }
         for (uint32_t i = 0; i < root->count; i++)
