@@ -62,8 +62,8 @@ void *swStackPop(swStack *stack)
     void *rtn = NULL;
     if (stack && stack->count)
     {
-        rtn = stack->elements[(stack->count - 1)];
         stack->count--;
+        rtn = stack->elements[stack->count];
     }
     return rtn;
 }

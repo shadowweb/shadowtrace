@@ -69,21 +69,21 @@ void clearDataStructures()
 
 bool functionTreeAppend(uint64_t functionAddress, bool end)
 {
-    printf ("'%s': entered\n", __func__);
+    // printf ("'%s': entered\n", __func__);
     bool rtn = false;
     if (functionAddress)
     {
         if (end)
         {
-            printf ("'%s': remove case\n", __func__);
             swNTree *lastChild = swStackPop(callStack);
             swNTree *currentParent = swStackPeek(callStack);
+            // printf ("'%s': remove case: parent = %p, child = %p\n", __func__, currentParent, lastChild);
             if (lastChild && currentParent)
             {
                 if (currentParent->count > 1)
                 {
-                    printf ("'%s': count = %u, prev child = %p, last child = %p, real last child = %p\n",
-                            __func__, currentParent->count, &(currentParent->children[currentParent->count - 2]), &(currentParent->children[currentParent->count - 1]), lastChild);
+                    // printf ("'%s': count = %u, prev child = %p, last child = %p, real last child = %p\n",
+                    //         __func__, currentParent->count, &(currentParent->children[currentParent->count - 2]), &(currentParent->children[currentParent->count - 1]), lastChild);
                     if (swNTreeCompare(&(currentParent->children[currentParent->count - 2]), lastChild) == 0)
                     {
                         currentParent->count--;
@@ -100,8 +100,8 @@ bool functionTreeAppend(uint64_t functionAddress, bool end)
         }
         else
         {
-            printf ("'%s': insert case\n", __func__);
             swNTree *currentParent = swStackPeek(callStack);
+            // printf ("'%s': insert case: parent = %p\n", __func__, currentParent);
             if (currentParent)
             {
                 swNTree *nextChild = swNTreeAddNext(currentParent, functionAddress);
@@ -118,6 +118,7 @@ bool functionTreeAppend(uint64_t functionAddress, bool end)
                 fprintf (stderr, "No parent on the stack\n");
         }
     }
+    // swNTreeDump(functionTree);
     return rtn;
 }
 

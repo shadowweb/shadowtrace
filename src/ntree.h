@@ -24,4 +24,6 @@ swNTree *swNTreeAddNext(swNTree *parent, uint64_t funcAddress);
 int swNTreeCompare(swNTree *node1, swNTree *node2);
 void swNTreePrint(swNTree *root, swNTreeWriteCB *writeCB, void *data);
 
+void swNTreeDump(swNTree *root);
+
 #endif

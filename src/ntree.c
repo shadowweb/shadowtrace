@@ -46,18 +46,11 @@ swNTree *swNTreeAddNext(swNTree *parent, uint64_t funcAddress)
         else
         {
             uint32_t newSize = (parent->size)? (parent->size * 2) : 1;
-            printf ("newSize = %u, parent->children = %p\n", newSize, parent->children);
-            // TODO: figure out why realloc with memset does not work
-            // swNTree *newChildren = realloc(parent->children, (size_t)newSize * sizeof(swNTree));
-            swNTree *newChildren = calloc((size_t)newSize, sizeof(swNTree));
+            // printf ("newSize = %u, parent->children = %p\n", newSize, parent->children);
+            swNTree *newChildren = realloc(parent->children, (size_t)newSize * sizeof(swNTree));
             if (newChildren)
             {
-                if (parent->size)
-                {
-                    memcpy(newChildren, parent->children, parent->count * sizeof(swNTree));
-                    free(parent->children);
-                }
-                // memset (&newChildren[parent->count], 0, (parent->size - parent->count) * sizeof(swNTree));
+                memset (&(newChildren[parent->count]), 0, ((newSize - parent->count) * sizeof(swNTree)));
                 parent->children = newChildren;
                 parent->size = newSize;
                 canAdd = true;
@@ -115,5 +108,24 @@ void swNTreePrint(swNTree *root, swNTreeWriteCB *writeCB, void *data)
         }
         for (uint32_t i = 0; i < root->count; i++)
             swNTreePrintNode(&(root->children[i]), writeCB, data, level);
+    }
+}
+
+static void swNTreeNodeDump(swNTree *node, uint32_t offset)
+{
+    printf("%*u: Node %p: children=%p, count=%u, size=%u\n", offset*2, offset, node, node->children, node->count, node->size);
+    for (uint32_t i = 0; i < node->count; i++)
+        swNTreeNodeDump(&node->children[i], (offset + 1));
+}
+
+
+void swNTreeDump(swNTree *root)
+{
+    if (root)
+    {
+        printf("Root %p: children=%p, count=%u, size=%u\n", root, root->children, root->count, root->size);
+        for (uint32_t i = 0; i < root->count; i++)
+            swNTreeNodeDump(&root->children[i], 1);
+        printf("\n");
     }
 }
