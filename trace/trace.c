@@ -27,7 +27,6 @@ static bool traceEnabled = false;
 
 void __attribute__ ((no_instrument_function)) traceFileUnmap()
 {
-    // fprintf(stderr, "%s: enter, addressCount = %u\n", __func__, addressCount);
     if ((fd > -1) && memoryPtr)
     {
         msync (memoryPtr, fileSizeIncrement, MS_SYNC);
@@ -35,12 +34,10 @@ void __attribute__ ((no_instrument_function)) traceFileUnmap()
         memoryPtr = memoryCurrentPtr = memoryEndPtr = NULL;
         traceEnabled = false;
     }
-    // fprintf(stderr, "%s: exit\n", __func__);
 }
 
 void __attribute__ ((no_instrument_function)) traceFileMap()
 {
-    // fprintf(stderr, "%s: enter\n", __func__);
     if ((fd > -1) && !memoryPtr)
     {
         if (ftruncate(fd, (currentFileOffset + fileSizeIncrement)) == 0 )
@@ -53,7 +50,7 @@ void __attribute__ ((no_instrument_function)) traceFileMap()
                 traceEnabled = true;
             }
             else
-                fprintf(stderr, "Failed mmape with error %s\n", strerror(errno));
+                fprintf(stderr, "Failed mmap with error %s\n", strerror(errno));
         }
         else
         {
@@ -61,7 +58,6 @@ void __attribute__ ((no_instrument_function)) traceFileMap()
             fd = -1;
         }
     }
-    // fprintf(stderr, "%s: exit\n", __func__);
 }
 
 void __attribute__ ((constructor,no_instrument_function)) traceBegin (void)
@@ -76,7 +72,7 @@ void __attribute__ ((constructor,no_instrument_function)) traceBegin (void)
     if (stat("./TRACE", &traceStat) == 0)
     {
         fd = open("./TRACE", (O_CREAT | O_RDWR | O_TRUNC), (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH));
-        if (fd >= 0)
+        if (fd > -1)
             traceFileMap();
     }
     // fprintf(stderr, "%s: exit\n", __func__);
@@ -93,6 +89,7 @@ void __attribute__ ((destructor,no_instrument_function)) traceEnd (void)
         if (ftruncate(fd, currentFileSize) < 0)
             fprintf (stderr, "failed to trancate trace file to the right size\n");
         close(fd);
+        fd = -1;
     }
     // fprintf(stderr, "%s: exit\n", __func__);
 }

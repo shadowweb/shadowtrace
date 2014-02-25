@@ -122,12 +122,146 @@ bool functionTreeAppend(uint64_t functionAddress, bool end)
     return rtn;
 }
 
+/*
+typedef struct swPrintTree
+{
+    char *mmapStartPtr;
+    char *mmapCurrentPtr;
+    char *mmapEndPtr;
+    off_t currentFileOffset;
+    size_t fileSizeReserved;
+    size_t fileSizeIncrement;
+    off_t segmentUsed;
+    int fd;
+    unsigned valid : 1;
+} swPrintTree;
+
+swPrintTree outStreamData = { .fd = -1 };
+
+void outputFileUnmap()
+{
+    if (outStreamData.valid && (outStreamData.fd > -1) && outStreamData.mmapStartPtr)
+    {
+        msync (outStreamData.mmapStartPtr, outStreamData.fileSizeIncrement, MS_SYNC);
+        munmap ((void *)outStreamData.mmapStartPtr, outStreamData.fileSizeIncrement);
+        outStreamData.mmapStartPtr = outStreamData.mmapCurrentPtr = outStreamData.mmapEndPtr = NULL;
+        outStreamData.valid = false;
+    }
+}
+
+void outputFileMap()
+{
+    if (!outStreamData.valid && (outStreamData.fd > -1) && !outStreamData.mmapStartPtr)
+    {
+        if (ftruncate(outStreamData.fd, (outStreamData.currentFileOffset + outStreamData.fileSizeIncrement)) == 0 )
+        {
+            if ((outStreamData.mmapStartPtr = (char *)mmap(NULL, outStreamData.fileSizeIncrement, (PROT_WRITE), MAP_SHARED, outStreamData.fd, outStreamData.currentFileOffset)) != MAP_FAILED)
+            {
+                outStreamData.mmapCurrentPtr = outStreamData.mmapStartPtr;
+                outStreamData.mmapEndPtr = outStreamData.mmapCurrentPtr + outStreamData.fileSizeIncrement;
+                outStreamData.currentFileOffset += outStreamData.fileSizeIncrement;
+                outStreamData.valid = true;
+            }
+            else
+            {
+                fprintf(stderr, "mmap(NULL, %lu, (PROT_WRITE), MAP_SHARED, %d, %ld)\n", outStreamData.fileSizeIncrement, outStreamData.fd, outStreamData.currentFileOffset);
+                fprintf(stderr, "Failed mmap with error %s\n", strerror(errno));
+            }
+        }
+        else
+        {
+            close(outStreamData.fd);
+            outStreamData.fd = -1;
+        }
+    }
+}
+
+
+bool outputInit(const char *fileName)
+{
+    bool rtn = false;
+    if (fileName)
+    {
+        if ((outStreamData.fd = open(fileName, (O_CREAT | O_RDWR | O_TRUNC), (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))) > -1)
+        {
+            outStreamData.fileSizeIncrement = (size_t)getpagesize() * 1024;
+            outputFileMap();
+            if (outStreamData.valid)
+                rtn = true;
+        }
+    }
+    return rtn;
+}
+
+void outputClose()
+{
+    if (outStreamData.fd > -1)
+    {
+        off_t currentFileSize = outStreamData.currentFileOffset - (off_t)(outStreamData.mmapEndPtr - outStreamData.mmapCurrentPtr);
+        outputFileUnmap();
+        if (ftruncate(outStreamData.fd, currentFileSize) < 0)
+            fprintf (stderr, "failed to trancate trace file to the right size\n");
+        close(outStreamData.fd);
+        outStreamData.fd = -1;
+        outStreamData.valid = false;
+    }
+}
+
+void outputFuncAddress(uint64_t funcAddress, uint32_t repeatCount, uint32_t level, void *data)
+{
+    if (outStreamData.valid)
+    {
+        int bytesNeeded = snprintf(NULL, 0, "%u %#lx %u\n", level, funcAddress, repeatCount);
+        if (bytesNeeded > 0)
+        {
+            size_t bytesAvailable = outStreamData.mmapEndPtr - outStreamData.mmapCurrentPtr;
+            if ((size_t)bytesNeeded < bytesAvailable)
+            {
+                if (snprintf(outStreamData.mmapCurrentPtr, bytesAvailable, "%u %#lx %u\n", level, funcAddress, repeatCount) == bytesNeeded)
+                {
+                    outStreamData.mmapCurrentPtr += bytesNeeded;
+                }
+                else
+                {
+                    fprintf(stderr, "Unexpected return from snprintf\n");
+                    outputFileUnmap();
+                }
+            }
+            else
+            {
+                char tmp[bytesNeeded + 1];
+                if (snprintf(tmp, bytesNeeded, "%u %#lx %u\n", level, funcAddress, repeatCount) == bytesNeeded)
+                {
+                    memcpy(outStreamData.mmapCurrentPtr, tmp, bytesAvailable);
+                    outStreamData.mmapCurrentPtr += bytesAvailable;
+                    outputFileUnmap();
+                    outputFileMap();
+                    if (outStreamData.valid)
+                    {
+                        size_t bytesLeft = bytesNeeded - bytesAvailable;
+                        if (bytesLeft)
+                        {
+                            memcpy(outStreamData.mmapCurrentPtr, &tmp[bytesAvailable], bytesLeft);
+                            outStreamData.mmapCurrentPtr += bytesLeft;
+                        }
+                    }
+                }
+                else
+                {
+                    fprintf(stderr, "Unexpected return from snprintf\n");
+                    outputFileUnmap();
+                }
+
+            }
+        }
+    }
+}
+*/
+
 void printFuncAddress(uint64_t funcAddress, uint32_t repeatCount, uint32_t level, void *data)
 {
     FILE *out = (FILE *)data;
-    // for (uint32_t l = 0; l < level; l++)
-    //     fprintf(out, "  ");
-    fprintf(out, "%*s%#016lx (%u)\n", level * 2, ((level)? "\\-" : ""), funcAddress, repeatCount);
+    fprintf(out, "%u %#lx %u\n", level, funcAddress, repeatCount);
 }
 
 int main(int argc, char *argv[])
@@ -163,8 +297,6 @@ int main(int argc, char *argv[])
                     {
                         uint64_t addr = (*funcAddressesCurrent) & (~FUNCTION_END);
                         bool end = ((*funcAddressesCurrent & FUNCTION_END) != 0 );
-                        // printf ("funcAddressesStart = %p, funcAddressesEnd = %p, funcAddressesCurrent = %p, addr = %lx, end = %u\n",
-                        //         (void *)funcAddressesStart, (void *)funcAddressesEnd, (void *)funcAddressesCurrent, addr, end);
                         if (functionTreeAppend(addr, end))
                             funcAddressesCurrent++;
                         else
@@ -183,7 +315,6 @@ int main(int argc, char *argv[])
             }
             if (mapOffset == (off_t)fileSize)
             {
-                // TODO: print the tree to output file here
                 FILE *outStream = fopen(outFile, "w");
                 if (outStream)
                 {
