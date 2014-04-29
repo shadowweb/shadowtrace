@@ -21,7 +21,7 @@ swNTree *swNTreeNew(uint64_t funcAddress);
 void swNTreeDelete(swNTree *tree);
 
 swNTree *swNTreeAddNext(swNTree *parent, uint64_t funcAddress);
-int swNTreeCompare(swNTree *node1, swNTree *node2);
+int swNTreeCompare(swNTree *node1, swNTree *node2, bool skipRepeat);
 void swNTreePrint(swNTree *root, swNTreeWriteCB *writeCB, void *data);
 
 void swNTreeDump(swNTree *root);

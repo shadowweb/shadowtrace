@@ -84,7 +84,7 @@ bool functionTreeAppend(uint64_t functionAddress, bool end)
                 {
                     // printf ("'%s': count = %u, prev child = %p, last child = %p, real last child = %p\n",
                     //         __func__, currentParent->count, &(currentParent->children[currentParent->count - 2]), &(currentParent->children[currentParent->count - 1]), lastChild);
-                    if (swNTreeCompare(&(currentParent->children[currentParent->count - 2]), lastChild) == 0)
+                    if (swNTreeCompare(&(currentParent->children[currentParent->count - 2]), lastChild, true) == 0)
                     {
                         currentParent->count--;
                         currentParent->children[currentParent->count - 1].repeatCount++;

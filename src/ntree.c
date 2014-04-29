@@ -67,7 +67,7 @@ swNTree *swNTreeAddNext(swNTree *parent, uint64_t funcAddress)
     return child;
 }
 
-int swNTreeCompare(swNTree *node1, swNTree *node2)
+int swNTreeCompare(swNTree *node1, swNTree *node2, bool skipRepeat)
 {
     int rtn = 0;
     if (node1 && node2)
@@ -75,12 +75,12 @@ int swNTreeCompare(swNTree *node1, swNTree *node2)
         rtn = (node1->funcAddress > node2->funcAddress) - (node1->funcAddress < node2->funcAddress);
         if (!rtn)
         {
-            rtn = (node1->repeatCount > node2->repeatCount) - (node1->repeatCount < node2->repeatCount);
+            rtn = (skipRepeat)? 0 : (node1->repeatCount > node2->repeatCount) - (node1->repeatCount < node2->repeatCount);
             if (!rtn)
             {
                 rtn = (node1->count > node2->count) - (node1->count < node2->count);
                 for (uint32_t i = 0; !rtn && (i < node1->count); i++)
-                    rtn = swNTreeCompare(&node1->children[i], &node2->children[i]);
+                    rtn = swNTreeCompare(&node1->children[i], &node2->children[i], false);
             }
         }
     }
