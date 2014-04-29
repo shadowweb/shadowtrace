@@ -64,6 +64,7 @@ sub load_input
             $func_addr{$addr} = 1;
         }
     }
+    close (INPUTFILE);
     return;
 }
 

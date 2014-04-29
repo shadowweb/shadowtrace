@@ -1,6 +1,6 @@
 CC =    cc
 CCC =    c++
-CFLAGS =  -pipe -W -Wall -Winline -Wpointer-arith -Wno-unused-parameter -Werror -g -std=c11 -funit-at-a-time
+CFLAGS =  -pipe -W -Wall -Winline -Wpointer-arith -Wno-unused-parameter -Werror -g -std=c99 -funit-at-a-time
 CCFLAGS =  -pipe -W -Wall -Winline -Wpointer-arith -Wno-unused-parameter -Werror -g -std=c++11 -funit-at-a-time
 CPP =   cc -E
 

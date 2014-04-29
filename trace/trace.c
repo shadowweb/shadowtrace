@@ -67,7 +67,7 @@ void __attribute__ ((constructor,no_instrument_function)) traceBegin (void)
     // save main thread id
     mainThreadId = pthread_self();
     fileSizeIncrement = (size_t)getpagesize() * 1024;
-    struct stat traceStat = { 0 };
+    struct stat traceStat = { .st_ino = 0 };
     // TODO: use file name that consists of program_invocation_short_name and ".TRACE" in the current running directory
     if (stat("./TRACE", &traceStat) == 0)
     {

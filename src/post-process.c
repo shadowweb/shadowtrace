@@ -300,10 +300,17 @@ int main(int argc, char *argv[])
                         if (functionTreeAppend(addr, end))
                             funcAddressesCurrent++;
                         else
+                        {
+                            fprintf(stderr, "failed to append %s address 0x%lX to the tree; offset = 0x%lX\n", ((end)? "END" : "START"), addr,
+                                mapOffset + (uint64_t)funcAddressesCurrent - (uint64_t)funcAddressesStart);
                             break;
+                        }
                     }
                     if (funcAddressesCurrent < (uint64_t *)funcAddressesEnd)
+                    {
+                        fprintf(stderr, "funcAddressesCurrent(%p) < funcAddressesEnd(%p)\n", funcAddressesCurrent, funcAddressesEnd);
                         break;
+                    }
                     munmap(funcAddressesStart, mapSize);
                     mapOffset += mapSize;
                 }
@@ -323,6 +330,8 @@ int main(int argc, char *argv[])
                 }
                 exitCode = EXIT_SUCCESS;
             }
+            else
+              fprintf(stderr, "mapOffset(%zd) != fileSize(%zd)\n", mapSize, fileSize);
             clearDataStructures();
         }
         else

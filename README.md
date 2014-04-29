@@ -25,4 +25,8 @@ Input file here is TRACE file.
 
 6. Address to symbol mapping:
 
-script/get-symbols.pl -e <executable file> -i <optpus of pre-process step> -o <symbol mapping file>
+scripts/get-symbols.pl -e <executable file> -i <optpus of pre-process step> -o <symbol mapping file>
+
+7. Generate tree file:
+
+scripts/print-call-tree.pl -i <optpus of pre-process step> -s <symbol mapping file> -o <trace tree file>
